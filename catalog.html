@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Catalog — Cosmetic Bot</title>
+  <style>
+    :root{--bg:#0f1724;--card:#111827;--muted:#9aa4b2;--accent:#7c5cff;--white:#fff}
+    body{margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:linear-gradient(180deg,#0b1220, #0f1724);color:var(--white)}
+    header{padding:14px 16px;display:flex;align-items:center;gap:12px}
+    header h1{font-size:18px;margin:0}
+    .wrap{padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+    .card{background:var(--card);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:240px}
+    .img{height:120px;background:#0b1220;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .img img{max-height:120px;max-width:100%;object-fit:cover}
+    .title{font-weight:600;font-size:14px}
+    .price{color:var(--accent);font-weight:700}
+    .add{margin-top:auto;background:var(--accent);border:none;color:white;padding:8px;border-radius:8px;font-weight:600;cursor:pointer}
+    .cartbar{position:fixed;left:12px;right:12px;bottom:12px;background:#081123;border-radius:12px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .cart-summary{color:var(--muted)}
+    .checkout{background:linear-gradient(90deg,#5e46ff,#8f6bff);border:none;padding:10px 14px;border-radius:10px;color:white;font-weight:700;cursor:pointer}
+    .qty-badge{background:#121827;border-radius:6px;padding:3px 6px;font-size:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>💄 Cosmetic Catalog</h1>
+    <div style="margin-left:auto;color:var(--muted);font-size:13px">Выбери продукты</div>
+  </header>
+
+  <div id="app" class="wrap"></div>
+
+  <div id="cartbar" class="cartbar" style="display:none">
+    <div>
+      <div style="font-weight:700">🧺 Корзина <span id="itemsCount" class="qty-badge">0</span></div>
+      <div class="cart-summary" id="cartSummary">Пусто</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button id="openCartBtn" class="checkout">Открыть</button>
+      <button id="checkoutBtn" class="checkout">Оформить</button>
+    </div>
+  </div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.expand?.();
+
+  // Каталог из 3 продуктов
+  const CATALOG = [
+    { 
+      sku: "lipstick", 
+      name: "Помада для губ", 
+      price: 85000, 
+      img: "https://upload.wikimedia.org/wikipedia/commons/1/15/Lipstick_in_tube.jpg", 
+      desc: "Матовая стойкая, 3.5 г" 
+    },
+    { 
+      sku: "powder", 
+      name: "Пудра компактная", 
+      price: 125000, 
+      img: "https://upload.wikimedia.org/wikipedia/commons/0/0e/Compact_powder.jpg", 
+      desc: "Шёлковая текстура, 12 г" 
+    },
+    { 
+      sku: "face_mask", 
+      name: "Маска для лица", 
+      price: 99000, 
+      img: "https://upload.wikimedia.org/wikipedia/commons/0/00/Sheet_mask.jpg", 
+      desc: "Увлажняющая тканевая маска" 
+    },
+  ];
+
+  const app = document.getElementById('app');
+  const cart = {};
+
+  function formatMoney(v){ return v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " сум"; }
+
+  function renderCatalog(){
+    app.innerHTML = "";
+    CATALOG.forEach(p=>{
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="img">${p.img ? `<img src="${p.img}">` : ""}</div>
+        <div class="title">${p.name}</div>
+        <div style="font-size:13px;color:var(--muted)">${p.desc}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="price">${formatMoney(p.price)}</div>
+        </div>
+        <button class="add">Добавить</button>
+      `;
+      const btn = card.querySelector('.add');
+      btn.addEventListener('click', ()=>{ addToCart(p.sku); });
+      app.appendChild(card);
+    });
+  }
+
+  function addToCart(sku){
+    cart[sku] = (cart[sku]||0) + 1;
+    updateCartBar();
+  }
+
+  function updateCartBar(){
+    const totalItems = Object.values(cart).reduce((a,b)=>a+b,0);
+    const totalSum = Object.entries(cart).reduce((s,[sku,q])=>{
+      const p = CATALOG.find(x=>x.sku===sku);
+      return s + (p ? p.price*q : 0);
+    },0);
+    if(totalItems>0){
+      document.getElementById('cartbar').style.display='flex';
+      document.getElementById('itemsCount').innerText = totalItems;
+      document.getElementById('cartSummary').innerText = `${totalItems} шт. • ${formatMoney(totalSum)}`;
+    } else {
+      document.getElementById('cartbar').style.display='none';
+    }
+  }
+
+  document.getElementById('openCartBtn').addEventListener('click', ()=>{
+    const lines = [];
+    const totalSum = Object.entries(cart).reduce((s,[sku,q])=>{
+      const p = CATALOG.find(x=>x.sku===sku);
+      if(p) lines.push(`${p.name} × ${q} = ${formatMoney(p.price*q)}`);
+      return s + (p? p.price*q:0);
+    },0);
+    if(lines.length===0) {
+      alert("Корзина пуста");
+      return;
+    }
+    lines.push("—————————");
+    lines.push("Итого: " + formatMoney(totalSum));
+    alert(lines.join("\n"));
+  });
+
+  document.getElementById('checkoutBtn').addEventListener('click', ()=>{
+    const items = Object.entries(cart).map(([sku,qty])=>{
+      const p = CATALOG.find(x=>x.sku===sku);
+      return { sku, name: p?.name||sku, qty, price: p?.price||0 };
+    });
+    if(items.length===0){ alert('Корзина пуста'); return; }
+    const subtotal = items.reduce((s,it)=>s + it.qty*it.price,0);
+    const order = {
+      type: 'webapp_order',
+      items,
+      subtotal,
+      total: subtotal,
+      created_at: new Date().toISOString(),
+    };
+    tg.sendData(JSON.stringify(order));
+    alert('✅ Заказ отправлен в бот!');
+  });
+
+  renderCatalog();
+  updateCartBar();
+</script>
+</body>
+</html>
