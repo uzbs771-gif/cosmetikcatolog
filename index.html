@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosmetic Shop</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #fdfdfd;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #ffb6c1, #ff69b4);
+      color: white;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+    }
+
+    .card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+
+    .card-body {
+      padding: 15px;
+      text-align: center;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin: 10px 0 5px;
+    }
+
+    .card-price {
+      color: #ff4081;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 8px 14px;
+      background: #ff4081;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      background: #e73370;
+    }
+
+    .cart-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      font-size: 16px;
+    }
+
+    .checkout-btn {
+      background: #ff69b4;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .checkout-btn:hover {
+      background: #e73370;
+    }
+  </style>
+</head>
+<body>
+  <header>💄 Cosmetic Shop</header>
+
+  <div class="container">
+    <div class="card">
+      <img src="https://via.placeholder.com/300x180.png?text=Помада" alt="Помада">
+      <div class="card-body">
+        <div class="card-title">Помада для губ</div>
+        <div class="card-price">45 000 сум</div>
+        <button class="btn" onclick="addToCart('Помада для губ', 45000)">➕ В корзину</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="https://via.placeholder.com/300x180.png?text=Пудра" alt="Пудра">
+      <div class="card-body">
+        <div class="card-title">Пудра</div>
+        <div class="card-price">60 000 сум</div>
+        <button class="btn" onclick="addToCart('Пудра', 60000)">➕ В корзину</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="https://via.placeholder.com/300x180.png?text=Маска" alt="Маска">
+      <div class="card-body">
+        <div class="card-title">Маска для лица</div>
+        <div class="card-price">30 000 сум</div>
+        <button class="btn" onclick="addToCart('Маска для лица', 30000)">➕ В корзину</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cart-bar">
+    <div id="cart-info">🛒 Корзина: 0 товаров</div>
+    <button class="checkout-btn" onclick="checkout()">Оформить заказ</button>
+  </div>
+
+  <script>
+    let cart = [];
+
+    function addToCart(name, price) {
+      cart.push({name, price});
+      updateCartInfo();
+    }
+
+    function updateCartInfo() {
+      document.getElementById('cart-info').innerText =
+        `🛒 Корзина: ${cart.length} товаров`;
+    }
+
+    function checkout() {
+      if (cart.length === 0) {
+        alert("Корзина пуста!");
+        return;
+      }
+
+      const order = cart.map(item => `${item.name} - ${item.price} сум`).join("\n");
+
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.sendData(JSON.stringify(cart));
+        Telegram.WebApp.close();
+      } else {
+        alert("Ваш заказ:\n" + order);
+      }
+    }
+  </script>
+</body>
+</html>
+
