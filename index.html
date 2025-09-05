@@ -148,12 +148,26 @@
   </div>
 
   <script>
-    let cart = [];
+  let cart = [];
 
-    function addToCart(name, price) {
-      cart.push({name, price});
-      updateCartInfo();
+  function addToCart(name, price) {
+    const existing = cart.find(i => i.name === name);
+    if (existing) {
+      existing.qty += 1;
+    } else {
+      cart.push({name, price, qty: 1});
     }
+    updateCartInfo();
+
+    // 🔗 сразу отправляем обновлённую корзину в бота
+    if (window.Telegram && Telegram.WebApp) {
+      Telegram.WebApp.sendData(JSON.stringify({
+        items: cart,
+        subtotal: cart.reduce((sum, i) => sum + i.price * i.qty, 0),
+        total: cart.reduce((sum, i) => sum + i.price * i.qty, 0)
+      }));
+    }
+  }
 
     function updateCartInfo() {
       document.getElementById('cart-info').innerText =
@@ -166,16 +180,17 @@
         return;
       }
 
-      const order = cart.map(item => `${item.name} - ${item.price} сум`).join("\n");
-
       if (window.Telegram && Telegram.WebApp) {
-        Telegram.WebApp.sendData(JSON.stringify(cart));
+        Telegram.WebApp.sendData(JSON.stringify({
+          items: cart,
+          subtotal: cart.reduce((sum, item) => sum + item.price, 0),
+          total: cart.reduce((sum, item) => sum + item.price, 0)
+        }));
         Telegram.WebApp.close();
       } else {
-        alert("Ваш заказ:\n" + order);
+        alert("Ваш заказ:\n" + cart.map(i => `${i.name} - ${i.price} сум`).join("\n"));
       }
     }
   </script>
 </body>
 </html>
-
